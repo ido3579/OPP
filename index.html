@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Eyes on the Prize</title>
+    <link rel="manifest" href="./manifest.json" />
+    <script type="module" crossorigin src="./assets/index-COKbmqF2.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CNrRtl5O.css">
+  </head>
+  <body>
+    <!-- Loading screen -->
+    <div id="loading-screen">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <p id="loading-msg">Initialising…</p>
+      </div>
+    </div>
+
+    <!-- Alert overlay — covers the whole screen on deviation -->
+    <div id="alert-overlay" aria-live="assertive" aria-label="Eye deviation detected"></div>
+
+    <!-- Camera viewport: video + landmark canvas are CSS-mirrored as a unit -->
+    <div id="viewport-wrapper">
+      <video id="video" playsinline muted autoplay></video>
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <!-- Status badge -->
+    <div id="status-bar">
+      <span id="status-icon">⬤</span>
+      <span id="status-text">Starting…</span>
+    </div>
+
+    <!-- Deviation progress bar -->
+    <div id="progress-container">
+      <div id="progress-bar"></div>
+    </div>
+
+    <!-- Controls -->
+    <div id="controls">
+      <button id="calibrate-btn" disabled>Calibrate</button>
+      <button id="toggle-debug-btn">Debug</button>
+    </div>
+
+    <!-- Calibration progress ring (shown during calibration) -->
+    <div id="calibration-overlay" hidden>
+      <div class="cal-ring">
+        <svg viewBox="0 0 100 100">
+          <circle class="cal-track" cx="50" cy="50" r="44" />
+          <circle id="cal-arc" class="cal-arc" cx="50" cy="50" r="44" />
+        </svg>
+        <p>Hold still…</p>
+      </div>
+    </div>
+
+    <!-- Sensitivity control -->
+    <div id="settings-panel">
+      <label for="sensitivity">Sensitivity
+        <input type="range" id="sensitivity" min="1" max="10" value="5" />
+        <span id="sensitivity-value">5</span>
+      </label>
+    </div>
+
+    <!-- Debug panel (togglable) -->
+    <div id="debug-panel" hidden>
+      <table>
+        <tr><td>L ratio</td><td id="db-left">—</td></tr>
+        <tr><td>R ratio</td><td id="db-right">—</td></tr>
+        <tr><td>Δ raw</td><td id="db-delta">—</td></tr>
+        <tr><td>Δ corrected</td><td id="db-corrected">—</td></tr>
+        <tr><td>Baseline</td><td id="db-baseline">not set</td></tr>
+        <tr><td>Timer</td><td id="db-timer">—</td></tr>
+        <tr><td>FPS</td><td id="db-fps">—</td></tr>
+      </table>
+    </div>
+
+  </body>
+</html>

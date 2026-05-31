@@ -1,0 +1,11 @@
+{
+  "name": "Eyes on the Prize",
+  "short_name": "EotP",
+  "description": "Real-time strabismus feedback via front-facing camera",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": []
+}
