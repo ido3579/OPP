@@ -1,8 +1,15 @@
 export class FeedbackManager {
   private alertOverlay: HTMLElement;
+  private alertLabel: HTMLElement;
 
   constructor(alertOverlay: HTMLElement) {
     this.alertOverlay = alertOverlay;
+
+    // Create a centred label inside the overlay
+    this.alertLabel = document.createElement('div');
+    this.alertLabel.id = 'alert-label';
+    this.alertLabel.textContent = '⚠ FIX YOUR GAZE';
+    this.alertOverlay.appendChild(this.alertLabel);
   }
 
   trigger(): void {
@@ -18,11 +25,8 @@ export class FeedbackManager {
 
   private visualAlert(): void {
     this.alertOverlay.classList.remove('active');
-    // Force reflow so re-adding the class re-triggers the animation
-    void this.alertOverlay.offsetWidth;
+    void this.alertOverlay.offsetWidth; // force reflow to restart animation
     this.alertOverlay.classList.add('active');
-
-    // Remove class after animation finishes (3 × 0.4s)
-    setTimeout(() => this.alertOverlay.classList.remove('active'), 1400);
+    setTimeout(() => this.alertOverlay.classList.remove('active'), 1300);
   }
 }

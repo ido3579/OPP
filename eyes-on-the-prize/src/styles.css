@@ -51,23 +51,43 @@ html, body {
 #alert-overlay {
   position: fixed;
   inset: 0;
-  border: 0px solid var(--warn);
-  border-radius: 0;
   pointer-events: none;
   z-index: 50;
-  transition: border-width 80ms ease-out, opacity 400ms ease-out;
   opacity: 0;
+  background: var(--warn);
+  /* thick inset box-shadow gives coloured border that doesn't push layout */
+  box-shadow: inset 0 0 0 0px var(--warn);
+  transition: opacity 300ms ease-out;
 }
 
 #alert-overlay.active {
-  border-width: 8px;
-  opacity: 1;
-  animation: alert-pulse 0.4s ease-in-out 3;
+  animation: alert-flash 1.2s ease-in-out forwards;
 }
 
-@keyframes alert-pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.35; }
+@keyframes alert-flash {
+  /* hard flash then fade to a pulsing border */
+  0%   { opacity: 0.55; box-shadow: inset 0 0 0 0px var(--warn); }
+  10%  { opacity: 0.0;  box-shadow: inset 0 0 0 12px var(--warn); }
+  25%  { opacity: 0.45; box-shadow: inset 0 0 0 12px var(--warn); }
+  40%  { opacity: 0.0;  box-shadow: inset 0 0 0 12px var(--warn); }
+  55%  { opacity: 0.4;  box-shadow: inset 0 0 0 12px var(--warn); }
+  70%  { opacity: 0.0;  box-shadow: inset 0 0 0 12px var(--warn); }
+  100% { opacity: 0;    box-shadow: inset 0 0 0 0px var(--warn); }
+}
+
+/* Alert centred label */
+#alert-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 /* ── Status bar ───────────────────────────────────────── */
