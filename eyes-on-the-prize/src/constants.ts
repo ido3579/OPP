@@ -21,8 +21,9 @@ export const LM = {
 // Detection
 export const EMA_ALPHA            = 0.25;   // smoothing (lower = heavier)
 export const BASE_THRESHOLD       = 0.07;   // iris-ratio delta to flag (unscaled)
-export const SUSTAINED_MS         = 1200;   // ms before alert fires
+export const SUSTAINED_MS         = 700;    // ms before alert fires
 export const FEEDBACK_COOLDOWN_MS = 3000;   // ms before alert can fire again
+export const AUTO_RECAL_MS        = 30000;  // ms of no alert → auto-recalibrate
 export const BLINK_EYE_RATIO      = 0.018;  // eye-height / face-height below = blink
 
 // Calibration

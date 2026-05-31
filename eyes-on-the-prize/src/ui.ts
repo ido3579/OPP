@@ -62,12 +62,13 @@ export function setLoadingMsg(ui: UI, msg: string): void {
   ui.loadingMsg.textContent = msg;
 }
 
-export function setStatus(ui: UI, state: 'starting' | 'ready' | 'no-face' | 'alert'): void {
+export function setStatus(ui: UI, state: 'starting' | 'ready' | 'no-face' | 'alert' | 'calibrating'): void {
   const labels: Record<typeof state, string> = {
-    starting: 'Starting…',
-    ready:    'Monitoring',
-    'no-face': 'No face detected',
-    alert:    'Eye deviation!',
+    starting:    'Starting…',
+    ready:       'Monitoring',
+    'no-face':   'No face detected',
+    alert:       'Eye deviation!',
+    calibrating: 'Auto-calibrating…',
   };
   ui.statusText.textContent = labels[state];
   ui.statusIcon.className = state === 'starting' ? '' : state;

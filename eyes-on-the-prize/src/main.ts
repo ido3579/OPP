@@ -4,7 +4,7 @@ import { FaceTracker }  from './tracker';
 import { Analyzer }     from './analyzer';
 import { Calibrator }   from './calibration';
 import { FeedbackManager } from './feedback';
-import { thresholdFromSensitivity } from './constants';
+import { thresholdFromSensitivity, AUTO_RECAL_MS } from './constants';
 import {
   queryUI, hideLoading, setLoadingMsg, setStatus,
   updateDebug, updateProgress, updateCalibrationArc,
@@ -22,13 +22,12 @@ let fps = 0;
 
 // ── Bootstrap ───────────────────────────────────────────
 async function main() {
-  const ui      = queryUI();
-  const tracker = new FaceTracker();
-  const analyzer = new Analyzer();
+  const ui         = queryUI();
+  const tracker    = new FaceTracker();
+  const analyzer   = new Analyzer();
   const calibrator = new Calibrator();
-  const feedback = new FeedbackManager(ui.alertOverlay);
+  const feedback   = new FeedbackManager(ui.alertOverlay);
 
-  // Initial threshold from slider default (value=5)
   analyzer.threshold = thresholdFromSensitivity(Number(ui.sensitivitySlider.value));
 
   // ── Camera ─────────────────────────────────────────────
@@ -65,18 +64,39 @@ async function main() {
   setStatus(ui, 'ready');
   ui.calibrateBtn.disabled = false;
 
+  // ── Auto-recalibration tracking ────────────────────────
+  // Tracks the last time an alert fired. If 30s pass with no alert,
+  // the gaze is stable enough to silently refresh the baseline.
+  let lastAlertMs = performance.now();
+  let autoRecalActive = false; // true when calibration was triggered automatically
+
+  function startCalibration(auto: boolean) {
+    autoRecalActive = auto;
+    analyzer.reset();
+    calibrator.begin(performance.now());
+    if (!auto) {
+      ui.calOverlay.hidden = false;
+      ui.calibrateBtn.textContent = 'Cancel';
+    }
+  }
+
+  function finishCalibration(baseline: number) {
+    analyzer.setBaseline(baseline);
+    ui.calOverlay.hidden = true;
+    ui.calibrateBtn.textContent = 'Re-calibrate';
+    autoRecalActive = false;
+  }
+
   // ── Button handlers ────────────────────────────────────
   ui.calibrateBtn.addEventListener('click', () => {
     if (calibrator.isActive) {
       calibrator.abort();
       ui.calOverlay.hidden = true;
-      ui.calibrateBtn.textContent = 'Calibrate';
+      ui.calibrateBtn.textContent = analyzer.baseline !== null ? 'Re-calibrate' : 'Calibrate';
+      autoRecalActive = false;
       return;
     }
-    analyzer.reset();
-    calibrator.begin(performance.now());
-    ui.calOverlay.hidden = false;
-    ui.calibrateBtn.textContent = 'Cancel';
+    startCalibration(false);
   });
 
   ui.toggleDebugBtn.addEventListener('click', () => {
@@ -94,7 +114,6 @@ async function main() {
   function loop(timestamp: number) {
     requestAnimationFrame(loop);
 
-    // FPS counter (update every 30 frames)
     frameCount++;
     if (frameCount % 30 === 0) {
       const now = performance.now();
@@ -107,31 +126,46 @@ async function main() {
 
     const analysis = analyzer.analyze(result, timestamp);
 
-    // Calibration tick
+    // ── Calibration tick ───────────────────────────────────
     if (calibrator.isActive) {
       const tick = calibrator.tick(analysis.smoothedDelta, timestamp);
-      updateCalibrationArc(ui, tick.progress);
+      if (!autoRecalActive) updateCalibrationArc(ui, tick.progress);
       if (tick.done && tick.baseline !== undefined) {
-        analyzer.setBaseline(tick.baseline);
-        ui.calOverlay.hidden = true;
-        ui.calibrateBtn.textContent = 'Re-calibrate';
+        finishCalibration(tick.baseline);
+        lastAlertMs = timestamp; // reset auto-recal timer after any calibration
       }
     }
 
-    // Status
-    if (!analysis.faceVisible) {
+    // ── Auto-recalibration trigger ─────────────────────────
+    // Only fires if a baseline already exists and no manual calibration is running.
+    // 30s of silence = stable gaze = safe moment to refresh baseline.
+    if (
+      analyzer.baseline !== null &&
+      !calibrator.isActive &&
+      analysis.faceVisible &&
+      timestamp - lastAlertMs > AUTO_RECAL_MS
+    ) {
+      startCalibration(true);
+      lastAlertMs = timestamp; // prevent immediately re-triggering
+    }
+
+    // ── Status & feedback ──────────────────────────────────
+    if (calibrator.isActive && autoRecalActive) {
+      setStatus(ui, 'calibrating');
+    } else if (!analysis.faceVisible) {
       setStatus(ui, 'no-face');
     } else if (analysis.alert) {
       setStatus(ui, 'alert');
       feedback.trigger();
+      lastAlertMs = timestamp; // reset auto-recal timer on alert
     } else {
       setStatus(ui, 'ready');
     }
 
-    // Progress bar
+    // ── Progress bar ───────────────────────────────────────
     updateProgress(ui, analysis.deviationMs);
 
-    // Debug panel & landmarks
+    // ── Debug ──────────────────────────────────────────────
     if (debugMode) {
       updateDebug(ui, analysis, analyzer.baseline, fps);
       if (ctx) {
