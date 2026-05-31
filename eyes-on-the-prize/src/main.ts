@@ -64,6 +64,25 @@ async function main() {
   setStatus(ui, 'ready');
   ui.calibrateBtn.disabled = false;
 
+  // ── Screen Wake Lock ───────────────────────────────────
+  // Prevents the screen from sleeping so RAF keeps firing.
+  // Re-acquired whenever the page becomes visible again (lock is released on hide).
+  async function acquireWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    try {
+      await navigator.wakeLock.request('screen');
+    } catch {
+      // silently ignore — device may deny (low battery, etc.)
+    }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      acquireWakeLock();
+      feedback.resumeAudio();
+    }
+  });
+  await acquireWakeLock();
+
   // ── Auto-recalibration tracking ────────────────────────
   // Tracks the last time an alert fired. If 30s pass with no alert,
   // the gaze is stable enough to silently refresh the baseline.
@@ -89,6 +108,7 @@ async function main() {
 
   // ── Button handlers ────────────────────────────────────
   ui.calibrateBtn.addEventListener('click', () => {
+    feedback.initAudio(); // AudioContext must start inside a user gesture
     if (calibrator.isActive) {
       calibrator.abort();
       ui.calOverlay.hidden = true;
