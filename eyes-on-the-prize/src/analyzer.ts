@@ -21,6 +21,17 @@ export interface AnalysisResult {
 
 type Landmark = { x: number; y: number; z: number };
 
+// Project iris onto the eye's actual axis (inner → outer corner) so the ratio
+// is invariant to head roll (tilt). Without this, x-only measurement treats a
+// tilted eye axis as deviation.
+function axisRatio(iris: Landmark, inner: Landmark, outer: Landmark): number {
+  const ax = outer.x - inner.x;
+  const ay = outer.y - inner.y;
+  const len2 = ax * ax + ay * ay;
+  if (len2 < 1e-9) return 0.5;
+  return ((iris.x - inner.x) * ax + (iris.y - inner.y) * ay) / len2;
+}
+
 export class Analyzer {
   private emaLeft  = new EMA(EMA_ALPHA);
   private emaRight = new EMA(EMA_ALPHA);
@@ -72,11 +83,8 @@ export class Analyzer {
     // With this convention, BOTH ratios increase together during version (gaze shift),
     // so their difference (delta) is invariant to conjugate eye movement and only
     // changes when one eye deviates independently.
-    const leftRatio  = (lm[LM.LEFT_IRIS].x  - lm[LM.LEFT_INNER].x)
-                     / (lm[LM.LEFT_OUTER].x  - lm[LM.LEFT_INNER].x);
-
-    const rightRatio = (lm[LM.RIGHT_INNER].x - lm[LM.RIGHT_IRIS].x)
-                     / (lm[LM.RIGHT_INNER].x  - lm[LM.RIGHT_OUTER].x);
+    const leftRatio  = axisRatio(lm[LM.LEFT_IRIS],  lm[LM.LEFT_INNER],  lm[LM.LEFT_OUTER]);
+    const rightRatio = axisRatio(lm[LM.RIGHT_IRIS], lm[LM.RIGHT_INNER], lm[LM.RIGHT_OUTER]);
 
     const smoothLeft  = this.emaLeft.update(leftRatio);
     const smoothRight = this.emaRight.update(rightRatio);
